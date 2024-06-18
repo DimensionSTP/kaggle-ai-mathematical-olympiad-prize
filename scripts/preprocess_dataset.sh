@@ -4,7 +4,7 @@ path="src/preprocessing"
 upload_users=("vicgalle" "beomi" "beomi" "beomi" "Bllossom" "upstage")
 model_types=("SOLAR-13B-Instruct-v1.0" "OPEN-SOLAR-KO-10.7B" "Llama-3-Open-Ko-8B" "Llama-3-Open-Ko-8B-Instruct-preview" "llama-3-Korean-Bllossom-70B" "SOLAR-0-70b-8bit")
 length=${#model_types[@]}
-dataset_modes="train dev test"
+dataset_modes="train test"
 
 for ((i=0; i<$length; i++))
 do
