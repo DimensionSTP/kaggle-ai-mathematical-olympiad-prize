@@ -1,7 +1,7 @@
 _target_: src.tuners.huggingface_tuner.HuggingFaceTuner
 hparams:
   pretrained_model_name:
-    - beomi/OPEN-SOLAR-KO-10.7B
+    - meta-math/MetaMath-7B-V1.0
   lr:
     low: 0.00005
     high: 0.0002
