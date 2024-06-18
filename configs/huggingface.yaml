@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - dataset: huggingface_upstagedialogues_dataset
+  - dataset: huggingface_kagglematholympiad_dataset
   - architecture: huggingface_architecture
   - tuner: huggingface_tuner
   - logger: wandb
@@ -8,7 +8,7 @@ defaults:
   - callbacks: callbacks
   - trainer: trainer
 
-package_name: upstage-nlp
+package_name: kaggle-ai-mathematical-olympiad-prize
 project_dir: ${oc.env:PROJECT_DIR}/${package_name}
 connected_dir: ${oc.env:CONNECTED_DIR}/${package_name}
 
@@ -23,11 +23,11 @@ split:
 batch_size: 16
 
 is_preprocessed: True
-data_column_name: dialogue
+data_column_name: problem
 prompt_column_name: cut_prompt
-target_column_name: summary
-upload_user: beomi
-model_type: OPEN-SOLAR-KO-10.7B
+target_column_name: answer
+upload_user: meta-math
+model_type: MetaMath-7B-V1.0
 pretrained_model_name: ${upload_user}/${model_type}
 custom_data_encoder_path: ${connected_dir}/data/merged_tokenizer
 merged_model_path: ${connected_dir}/data/merged_model/${pretrained_model_name}
@@ -75,7 +75,7 @@ gradient_clip_algorithm: norm
 epoch: 100
 
 model_name: HuggingFace
-dataset_name: UpStageDialogues
+dataset_name: KaggleMathOlympiad
 mode: train
 
 is_tuned: tuned
