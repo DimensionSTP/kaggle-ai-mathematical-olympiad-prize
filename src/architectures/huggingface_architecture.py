@@ -23,7 +23,6 @@ class HuggingFaceArchitecture(LightningModule):
         self,
         model: nn.Module,
         pretrained_model_name: str,
-        is_causal: bool,
         is_preprocessed: bool,
         custom_data_encoder_path: str,
         strategy: str,
@@ -40,7 +39,6 @@ class HuggingFaceArchitecture(LightningModule):
         super().__init__()
         self.model = model
         self.pretrained_model_name = pretrained_model_name
-        self.is_causal = is_causal
         if is_preprocessed:
             data_encoder_path = (
                 f"{custom_data_encoder_path}/{self.pretrained_model_name}"
@@ -91,9 +89,7 @@ class HuggingFaceArchitecture(LightningModule):
         mode: str,
     ) -> Dict[str, torch.Tensor]:
         encoded = batch["encoded"]
-        if self.is_causal:
-            encoded["labels"] = encoded["input_ids"]
-        label = encoded["labels"]
+        label = encoded["input_ids"]
         index = batch["index"]
         output = self(
             encoded=encoded,
@@ -270,9 +266,8 @@ class HuggingFaceArchitecture(LightningModule):
         scores = output.scores
         logit = torch.stack(scores, dim=1)
         generation = output.sequences
-        if self.is_causal:
-            input_length = len(encoded["input_ids"][0])
-            generation = generation[:, input_length:]
+        input_length = len(encoded["input_ids"][0])
+        generation = generation[:, input_length:]
 
         if len(logit.shape) < 3:
             logit = logit.unsqueeze(0)
