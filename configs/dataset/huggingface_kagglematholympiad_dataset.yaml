@@ -1,4 +1,4 @@
-_target_: src.datasets.huggingface_dataset.UpStageDialoguesDataset
+_target_: src.datasets.huggingface_dataset.KaggleMathOlympiadDataset
 data_path: ${connected_dir}/data
 split: ${split.train}
 is_preprocessed: ${is_preprocessed}
