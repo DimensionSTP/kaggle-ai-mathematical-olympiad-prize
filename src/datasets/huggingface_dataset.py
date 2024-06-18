@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 
 
-class UpStageDialoguesDataset(Dataset):
+class KaggleMathOlympiadDataset(Dataset):
     def __init__(
         self,
         data_path: str,
