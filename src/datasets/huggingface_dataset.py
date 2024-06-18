@@ -13,7 +13,6 @@ class UpStageDialoguesDataset(Dataset):
         self,
         data_path: str,
         split: str,
-        is_causal: bool,
         is_preprocessed: bool,
         data_column_name: str,
         prompt_column_name: str,
@@ -27,7 +26,6 @@ class UpStageDialoguesDataset(Dataset):
     ) -> None:
         self.data_path = data_path
         self.split = split
-        self.is_causal = is_causal
         self.is_preprocessed = is_preprocessed
         self.data_column_name = data_column_name
         self.prompt_column_name = prompt_column_name
@@ -60,28 +58,17 @@ class UpStageDialoguesDataset(Dataset):
         self,
         idx: int,
     ) -> Dict[str, Any]:
-        if not self.is_causal:
-            encoded = self.encode_text(
-                data=self.datas[idx],
-                data_type="data",
-            )
-            label = self.encode_text(
-                data=self.labels[idx],
-                data_type="target",
-            )["input_ids"]
-            encoded["labels"] = label
+        if self.is_preprocessed:
+            prompt = self.datas[idx] + self.labels[idx]
         else:
-            if self.is_preprocessed:
-                prompt = self.datas[idx] + self.labels[idx]
-            else:
-                prompt = self.generate_prompt(
-                    data=self.datas[idx],
-                    label=self.labels[idx],
-                )
-            encoded = self.encode_text(
-                data=prompt,
-                data_type="data",
+            prompt = self.generate_prompt(
+                data=self.datas[idx],
+                label=self.labels[idx],
             )
+        encoded = self.encode_text(
+            data=prompt,
+            data_type="data",
+        )
         if "token_type_ids" in encoded.keys():
             del encoded["token_type_ids"]
         return {
@@ -131,13 +118,10 @@ class UpStageDialoguesDataset(Dataset):
                     )
         else:
             raise ValueError(f"Inavalid split: {self.split}")
-        if not self.is_causal:
-            datas = data[self.data_column_name].apply(lambda x: x.strip()).tolist()
+        if self.is_preprocessed:
+            datas = data[self.prompt_column_name].tolist()
         else:
-            if self.is_preprocessed:
-                datas = data[self.prompt_column_name].tolist()
-            else:
-                datas = data[self.data_column_name].apply(lambda x: x.strip()).tolist()
+            datas = data[self.data_column_name].apply(lambda x: x.strip()).tolist()
         labels = data[self.target_column_name].tolist()
         return {
             "datas": datas,
@@ -150,13 +134,10 @@ class UpStageDialoguesDataset(Dataset):
         data_type: str,
     ) -> Dict[str, torch.Tensor]:
         if data_type == "data":
-            if not self.is_causal:
+            if self.split == "predict":
                 max_length = self.data_max_length
             else:
-                if self.split == "predict":
-                    max_length = self.data_max_length
-                else:
-                    max_length = self.data_max_length + self.target_max_length
+                max_length = self.data_max_length + self.target_max_length
         elif data_type == "target":
             max_length = self.target_max_length
         else:
