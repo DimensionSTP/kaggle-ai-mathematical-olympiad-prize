@@ -1,16 +1,16 @@
-# Summary DL pipeline for NLP competition
+# Pipeline for Kaggle competition
 
-## For Upstage NLP competition
+## For Kaggle ai-mathematical-olympiad-prize competition
 
 ### Dataset
-Upstage NLP competition dataset(dialogue summarization)
+Kaggle ai-mathematical-olympiad-prize competition dataset(Math question solving dataset)
 
 ### Quick setup
 
 ```bash
 # clone project
-git clone https://github.com/DimensionSTP/upstage-nlp.git
-cd upstage-nlp
+git clone https://github.com/DimensionSTP/kaggle-ai-mathematical-olympiad-prize.git
+cd kaggle-ai-mathematical-olympiad-prize
 
 # [OPTIONAL] create conda environment
 conda create -n myenv python=3.8
