@@ -19,8 +19,10 @@ from omegaconf import DictConfig
 def make_corpus(
     config: DictConfig,
 ) -> None:
-    train_df = pd.read_csv(f"{config.connected_dir}/data/train.csv")
-    val_df = pd.read_csv(f"{config.connected_dir}/data/dev.csv")
+    train_df = pd.read_parquet(
+        f"{config.connected_dir}/data/camel-ai/math/train.parquet"
+    )
+    original_train_df = pd.read_csv(f"{config.connected_dir}/data/train.csv")
     test_df = pd.read_csv(f"{config.connected_dir}/data/test.csv")
 
     if not os.path.exists(f"{config.connected_dir}/data/corpus"):
@@ -39,15 +41,15 @@ def make_corpus(
     with open(
         f"{config.connected_dir}/data/corpus/corpus.txt", "a", encoding="utf-8"
     ) as f:
-        for line in val_df[config.data_column_name]:
+        for line in original_train_df[config.data_column_name]:
             f.write(line + "\n")
-        for line in val_df[config.target_column_name]:
-            f.write(line + "\n")
+        for line in original_train_df[config.target_column_name]:
+            f.write(str(line) + "\n")
     with open(
         f"{config.connected_dir}/data/corpus/corpus.txt", "a", encoding="utf-8"
     ) as f:
         for line in test_df[config.data_column_name]:
-            f.write(line + "\n")
+            f.write(str(line) + "\n")
 
 
 if __name__ == "__main__":
