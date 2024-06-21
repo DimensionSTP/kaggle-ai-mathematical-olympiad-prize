@@ -22,6 +22,7 @@ split:
 
 batch_size: 16
 
+split_ratio: 0.1
 is_preprocessed: True
 data_column_name: problem
 prompt_column_name: cut_prompt
@@ -31,9 +32,9 @@ model_type: MetaMath-7B-V1.0
 pretrained_model_name: ${upload_user}/${model_type}
 custom_data_encoder_path: ${connected_dir}/data/merged_tokenizer
 merged_model_path: ${connected_dir}/data/merged_model/${pretrained_model_name}
-data_max_length: 1024
-target_max_length: 256
-target_min_length: 16
+data_max_length: 508
+target_max_length: 4
+target_min_length: 2
 
 quantization_type: origin
 quantization_config:
@@ -91,6 +92,8 @@ resumed_step: 0
 ckpt_path: ${callbacks.model_checkpoint.dirpath}/epoch=${epoch}.ckpt
 
 submission_file_name: test
+id_column_name: id
+row_id_column_name: row_id
 per_device_save_path: ${connected_dir}/sharded_results/${save_detail}-epoch=${epoch}
 logit_name: ${save_detail}-epoch=${epoch}
 pred_name: ${save_detail}-epoch=${epoch}
