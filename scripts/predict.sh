@@ -10,7 +10,7 @@ peft_type="origin"
 data_max_length=508
 target_max_length=4
 precision="bf16"
-batch_size=16
+batch_size=48
 epochs="3 4"
 
 for epoch in $epochs

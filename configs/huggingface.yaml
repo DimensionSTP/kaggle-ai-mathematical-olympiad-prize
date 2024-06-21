@@ -20,7 +20,7 @@ split:
   test: test
   predict: predict
 
-batch_size: 16
+batch_size: 48
 
 split_ratio: 0.1
 is_preprocessed: True
