@@ -1,14 +1,14 @@
 #!/bin/bash
 
-is_preprocessed=True
+is_preprocessed=False
 is_tuned="untuned"
 strategy="deepspeed_stage_3_offload"
-upload_user="beomi"
-model_type="OPEN-SOLAR-KO-10.7B"
+upload_user="meta-math"
+model_type="MetaMath-7B-V1.0"
 quantization_type="origin"
 peft_type="origin"
-data_max_length=1024
-target_max_length=256
+data_max_length=508
+target_max_length=4
 precision="bf16"
 batch_size=16
 epochs="3 4"
