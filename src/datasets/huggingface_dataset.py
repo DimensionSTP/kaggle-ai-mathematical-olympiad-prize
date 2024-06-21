@@ -1,6 +1,7 @@
 from typing import Dict, Any, List
 
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 import torch
 from torch.utils.data import Dataset
@@ -13,6 +14,8 @@ class KaggleMathOlympiadDataset(Dataset):
         self,
         data_path: str,
         split: str,
+        split_ratio: float,
+        seed: int,
         is_preprocessed: bool,
         data_column_name: str,
         prompt_column_name: str,
@@ -26,6 +29,8 @@ class KaggleMathOlympiadDataset(Dataset):
     ) -> None:
         self.data_path = data_path
         self.split = split
+        self.split_ratio = split_ratio
+        self.seed = seed
         self.is_preprocessed = is_preprocessed
         self.data_column_name = data_column_name
         self.prompt_column_name = prompt_column_name
@@ -50,6 +55,7 @@ class KaggleMathOlympiadDataset(Dataset):
         self.labels = dataset["labels"]
         self.data_max_length = data_max_length
         self.target_max_length = target_max_length
+        self.original_train_df = pd.read_csv(f"{self.data_path}/train.csv")
 
     def __len__(self) -> int:
         return len(self.labels)
@@ -77,18 +83,28 @@ class KaggleMathOlympiadDataset(Dataset):
         }
 
     def get_dataset(self) -> Dict[str, List[Any]]:
-        if self.split in ["train", "test"]:
+        if self.split in ["train", "val"]:
+            if self.is_preprocessed:
+                parquet_path = f"{self.data_path}/preprocessed_dataset/{self.pretrained_model_name}/train.parquet"
+            else:
+                parquet_path = f"{self.data_path}/camel-ai/math/train.parquet"
+            data = pd.read_parquet(parquet_path)
+            data = data.fillna("_")
+            train_data, val_data = train_test_split(
+                data,
+                test_size=self.split_ratio,
+                random_state=self.seed,
+                shuffle=True,
+            )
+            if self.split == "train":
+                data = train_data
+            else:
+                data = val_data
+        elif self.split == "test":
             if self.is_preprocessed:
                 csv_path = f"{self.data_path}/preprocessed_dataset/{self.pretrained_model_name}/{self.split}.csv"
             else:
                 csv_path = f"{self.data_path}/{self.split}.csv"
-            data = pd.read_csv(csv_path)
-            data = data.fillna("_")
-        elif self.split == "val":
-            if self.is_preprocessed:
-                csv_path = f"{self.data_path}/preprocessed_dataset/{self.pretrained_model_name}/dev.csv"
-            else:
-                csv_path = f"{self.data_path}/dev.csv"
             data = pd.read_csv(csv_path)
             data = data.fillna("_")
         elif self.split == "predict":
@@ -158,23 +174,61 @@ class KaggleMathOlympiadDataset(Dataset):
         data: str,
         label: str,
     ) -> str:
-        default_system_prompt = "너의 역할은 대화 내용을 요약해주는 요약 전문가야. 다음 사람들의 대화 내용을 보고 적절히 요약해줘."
+        if self.split == "predict":
+            default_system_prompt = f"""
+You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide the solution. The answer to each problem is an integer between 0 and 999. Do not provide explanations, only the final integer answer. Follow these rules:
+
+1. **Problem Understanding**: Understand the problem accurately.
+2. **Provide the Answer**: Directly provide the final integer answer.
+3. **Answer Verification**: Ensure that your answer is correct and falls within the range of 0 to 999.
+4. **No Explanation**: Do not provide step-by-step explanations or any additional information. Only provide the final answer.
+
+### Example Problems:
+
+**example 1**:
+problem:
+{self.original_train_df[self.data_column_name][3]}
+answer:
+{self.original_train_df[self.target_column_name][3]}
+
+**example 2**:
+problem:
+{self.original_train_df[self.data_column_name][4]}
+answer:
+{self.original_train_df[self.target_column_name][4]}
+
+**example 3**:
+problem:
+{self.original_train_df[self.data_column_name][5]}
+answer:
+{self.original_train_df[self.target_column_name][5]}
+"""
+        else:
+            default_system_prompt = """
+You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide a detailed step-by-step explanation and solution. Follow these rules:
+
+1. **Problem Understanding**: Understand the problem accurately, and if necessary, restate the problem for clarity.
+2. **Step-by-Step Explanation**: Explain each step logically, using equations if needed.
+3. **Result Verification**: Verify that the final result is correct and explain the significance of the result.
+4. **Clear Description**: Ensure your explanation is clear and concise, with each step being understandable.
+5. **Provide Additional Information**: Provide additional concepts or information related to the problem if needed.
+"""
         if self.split == "predict":
             prompt = f"""### Instruction:
-            {default_system_prompt} 
+{default_system_prompt} 
 
-            ### Input:
-            {data.strip()}
+### Input(problem):
+{data.strip()}
 
-            ### Response:
-            """.strip()
+### Response(solution):
+""".strip()
         else:
             prompt = f"""### Instruction:
-            {default_system_prompt} 
+{default_system_prompt} 
 
-            ### Input:
-            {data.strip()}
+### Input(problem):
+{data.strip()}
 
-            ### Response:
-            {label} """.strip()
+### Response(solution):
+{label} """.strip()
         return prompt
