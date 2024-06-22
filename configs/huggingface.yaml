@@ -92,8 +92,6 @@ resumed_step: 0
 ckpt_path: ${callbacks.model_checkpoint.dirpath}/epoch=${epoch}.ckpt
 
 submission_file_name: test
-id_column_name: id
-row_id_column_name: row_id
 per_device_save_path: ${connected_dir}/sharded_results/${save_detail}-epoch=${epoch}
 logit_name: ${save_detail}-epoch=${epoch}
 pred_name: ${save_detail}-epoch=${epoch}
