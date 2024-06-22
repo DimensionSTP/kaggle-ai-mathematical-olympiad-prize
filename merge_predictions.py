@@ -99,6 +99,10 @@ def merge_predictions(
     if len(all_generations) > len(generation_df):
         all_generations = all_generations[: len(generation_df)]
     generation_df[config.target_column_name] = all_generations
+    generation_df = generation_df.drop(
+        config.data_column_name,
+        axis=1,
+    )
     if not os.path.exists(f"{config.connected_dir}/submissions"):
         os.makedirs(
             f"{config.connected_dir}/submissions",
