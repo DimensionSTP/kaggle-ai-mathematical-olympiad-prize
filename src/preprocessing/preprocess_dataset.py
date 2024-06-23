@@ -31,7 +31,8 @@ def preprocess_dataset(
         raise ValueError(f"Invalid mode: {config.mode}")
     original_train_df = pd.read_csv(f"{config.connected_dir}/data/train.csv")
     tokenizer = AutoTokenizer.from_pretrained(
-        f"{config.custom_data_encoder_path}/{config.pretrained_model_name}"
+        f"{config.custom_data_encoder_path}/{config.pretrained_model_name}",
+        use_fast=True,
     )
 
     def generate_prompt(
