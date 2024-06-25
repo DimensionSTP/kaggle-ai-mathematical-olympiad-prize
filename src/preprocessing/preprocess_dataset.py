@@ -38,9 +38,8 @@ def preprocess_dataset(
     def generate_prompt(
         data: str,
     ) -> str:
-        if config.mode == "test":
-            default_system_prompt = f"""
-You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide the solution. The answer to each problem is an integer between 0 and 999. Do not provide explanations, only the final integer answer. Follow these rules:
+        default_system_prompt = f"""
+You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide the answer. The answer to each problem is an integer between 0 and 999. Do not provide explanations, only the final integer answer. Follow these rules:
 
 1. **Problem Understanding**: Understand the problem accurately.
 2. **Provide the Answer**: Directly provide the final integer answer.
@@ -67,23 +66,13 @@ problem:
 answer:
 {original_train_df[config.target_column_name][5]}
 """
-        else:
-            default_system_prompt = """
-You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide a detailed step-by-step explanation and solution. Follow these rules:
-
-1. **Problem Understanding**: Understand the problem accurately, and if necessary, restate the problem for clarity.
-2. **Step-by-Step Explanation**: Explain each step logically, using equations if needed.
-3. **Result Verification**: Verify that the final result is correct and explain the significance of the result.
-4. **Clear Description**: Ensure your explanation is clear and concise, with each step being understandable.
-5. **Provide Additional Information**: Provide additional concepts or information related to the problem if needed.
-"""
         prompt = f"""### Instruction:
 {default_system_prompt} 
 
 ### Input(problem):
 {data.strip()}
 
-### Response(solution):
+### Response(answer):
 """.strip()
         return prompt
 
