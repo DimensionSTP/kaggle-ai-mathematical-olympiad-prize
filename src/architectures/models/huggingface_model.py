@@ -1,5 +1,6 @@
-from typing import Dict, Any, Union
+from typing import Dict, Union
 import os
+import math
 
 import torch
 from torch import nn
@@ -7,7 +8,7 @@ from torch import nn
 from transformers import (
     BitsAndBytesConfig,
     PreTrainedModel,
-    AutoModelForCausalLM,
+    AutoModelForSequenceClassification,
     AutoTokenizer,
 )
 
@@ -27,6 +28,8 @@ class HuggingFaceModel(nn.Module):
         quantization_config: BitsAndBytesConfig,
         peft_type: str,
         peft_config: LoraConfig,
+        num_labels: int,
+        system: int,
     ) -> None:
         super().__init__()
         self.pretrained_model_name = pretrained_model_name
@@ -86,40 +89,50 @@ class HuggingFaceModel(nn.Module):
         if self.mode in ["test" "predict"]:
             self.peft_config.inference_mode = True
 
+        self.num_labels = num_labels
+        self.system = system
+        self.num_digits = round(
+            math.log(
+                self.num_labels,
+                self.system,
+            )
+        )
+
         self.model = self.get_model()
+        self.digit_classifiers = nn.ModuleList(
+            [
+                nn.Linear(
+                    self.num_labels,
+                    self.system,
+                )
+                for _ in range(self.num_digits)
+            ]
+        )
 
     def forward(
         self,
         encoded: Dict[str, torch.Tensor],
     ) -> Dict[str, torch.Tensor]:
         output = self.model(**encoded)
-        return output
-
-    def generate(
-        self,
-        encoded: Dict[str, torch.Tensor],
-        options: Dict[str, Any],
-        target_max_length: int,
-        target_min_length: int,
-    ) -> torch.Tensor:
-        options["max_new_tokens"] = target_max_length
-        options["min_new_tokens"] = target_min_length
-        output = self.model.generate(
-            **{
-                **encoded,
-                **options,
-            }
-        )
-        return output
+        logits_of_digits = [
+            digit_classifier(output.logits)
+            for digit_classifier in self.digit_classifiers
+        ]
+        return {
+            "original_output": output,
+            "logits_of_digits": logits_of_digits,
+        }
 
     def get_model(self) -> PreTrainedModel:
-        model = AutoModelForCausalLM.from_pretrained(
+        model = AutoModelForSequenceClassification.from_pretrained(
             self.model_path,
             output_hidden_states=False,
             torch_dtype=self.precision,
             attn_implementation=self.attn_implementation,
             quantization_config=self.quantization_config,
             device_map=self.device_map,
+            num_labels=self.num_labels,
+            ignore_mismatched_sizes=True,
         )
 
         if model.config.pad_token_id is None:
