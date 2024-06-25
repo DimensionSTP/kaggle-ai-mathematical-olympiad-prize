@@ -24,6 +24,8 @@ model:
     lora_dropout: ${peft_config.lora_dropout}
     bias: ${peft_config.bias}
     task_type: ${peft_config.task_type}
+  num_labels: ${num_labels}
+  system: ${system}
 
 pretrained_model_name: ${pretrained_model_name}
 is_preprocessed: ${is_preprocessed}
@@ -33,8 +35,5 @@ lr: ${lr}
 period: ${period}
 eta_min: ${eta_min}
 interval: step
-options: ${options}
-target_max_length: ${target_max_length}
-target_min_length: ${target_min_length}
-per_device_save_path: ${per_device_save_path}
-target_column_name: ${target_column_name}
+num_labels: ${num_labels}
+system: ${system}
