@@ -1,5 +1,9 @@
 import os
 
+import numpy as np
+import pandas as pd
+import torch
+
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 
@@ -253,13 +257,13 @@ def predict(
             config.strategy == "deepspeed_stage_3"
             or config.strategy == "deepspeed_stage_3_offload"
         ):
-            trainer.predict(
+            logits_group = trainer.predict(
                 model=architecture,
                 dataloaders=predict_loader,
                 ckpt_path=f"{config.ckpt_path}/model.pt",
             )
         else:
-            trainer.predict(
+            logits_group = trainer.predict(
                 model=architecture,
                 dataloaders=predict_loader,
                 ckpt_path=config.ckpt_path,
@@ -276,6 +280,64 @@ def predict(
             level="ERROR",
         )
         raise e
+
+    pred_df = pd.read_csv(
+        f"{config.connected_dir}/data/{config.submission_file_name}.csv"
+    )
+    all_predictions_per_digit = []
+    for i, logits in enumerate(logits_group):
+        if len(logits[0].shape) == 3:
+            logits = [
+                torch.cat(
+                    logit.split(
+                        1,
+                        dim=0,
+                    ),
+                    dim=1,
+                ).view(
+                    -1,
+                    logits[0].shape[-1],
+                )
+                for logit in logits
+            ]
+        all_logits = torch.cat(
+            logits,
+            dim=0,
+        )
+        sorted_logits_with_indices = all_logits[all_logits[:, -1].argsort()]
+        sorted_logits = sorted_logits_with_indices[: len(pred_df), :-1].numpy()
+        all_predictions = np.argmax(
+            sorted_logits,
+            axis=-1,
+        )
+        if not os.path.exists(f"{config.connected_dir}/logits"):
+            os.makedirs(
+                f"{config.connected_dir}/logits",
+                exist_ok=True,
+            )
+        np.save(
+            f"{config.connected_dir}/logits/{config.logit_name}-digit_{i}.npy",
+            sorted_logits,
+        )
+        all_predictions_per_digit.append(all_predictions)
+    all_predictions_weighted_sum = np.zeros_like(all_predictions_per_digit[0])
+    for i, all_predictions in enumerate(all_predictions_per_digit):
+        weight = 10**i
+        all_predictions_weighted_sum += weight * all_predictions
+    pred_df[config.target_column_name] = all_predictions_weighted_sum
+    pred_df = pred_df.drop(
+        config.data_column_name,
+        axis=1,
+    )
+    if not os.path.exists(f"{config.connected_dir}/submissions"):
+        os.makedirs(
+            f"{config.connected_dir}/submissions",
+            exist_ok=True,
+        )
+    pred_df.to_csv(
+        f"{config.connected_dir}/submissions/{config.submission_name}.csv",
+        index=False,
+    )
 
 
 def tune(
