@@ -13,3 +13,5 @@ pretrained_model_name: ${pretrained_model_name}
 custom_data_encoder_path: ${custom_data_encoder_path}
 data_max_length: ${data_max_length}
 target_max_length: ${target_max_length}
+num_labels: ${num_labels}
+system: ${system}
