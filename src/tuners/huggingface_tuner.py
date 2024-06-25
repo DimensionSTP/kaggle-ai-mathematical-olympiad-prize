@@ -118,6 +118,8 @@ class HuggingFaceTuner:
             ),
             peft_type=self.module_params.peft_type,
             peft_config=LoraConfig(**self.module_params.peft_config),
+            num_labels=self.module_params.num_labels,
+            system=self.module_params.system,
         )
         architecture = HuggingFaceArchitecture(
             model=model,
@@ -129,11 +131,8 @@ class HuggingFaceTuner:
             period=params["period"],
             eta_min=params["eta_min"],
             interval=self.module_params.interval,
-            options=self.module_params.options,
-            target_max_length=self.module_params.target_max_length,
-            target_min_length=self.module_params.target_min_length,
-            per_device_save_path=self.module_params.per_device_save_path,
-            target_column_name=self.module_params.target_column_name,
+            num_labels=self.module_params.num_labels,
+            system=self.module_params.system,
         )
 
         self.logger.log_hyperparams(params)
