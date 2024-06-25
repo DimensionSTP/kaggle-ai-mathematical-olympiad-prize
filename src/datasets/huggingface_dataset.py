@@ -1,4 +1,5 @@
 from typing import Dict, Any, List
+import math
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -26,6 +27,8 @@ class KaggleMathOlympiadDataset(Dataset):
         custom_data_encoder_path: str,
         data_max_length: int,
         target_max_length: int,
+        num_labels: int,
+        system: int,
     ) -> None:
         self.data_path = data_path
         self.split = split
@@ -55,6 +58,14 @@ class KaggleMathOlympiadDataset(Dataset):
         self.labels = dataset["labels"]
         self.data_max_length = data_max_length
         self.target_max_length = target_max_length
+        self.num_labels = num_labels
+        self.system = system
+        self.num_digits = round(
+            math.log(
+                self.num_labels,
+                self.system,
+            )
+        )
         self.original_train_df = pd.read_csv(f"{self.data_path}/train.csv")
 
     def __len__(self) -> int:
@@ -75,10 +86,22 @@ class KaggleMathOlympiadDataset(Dataset):
             data=prompt,
             data_type="data",
         )
+        encoded["labels"] = torch.tensor(
+            [self.labels[idx]],
+            dtype=torch.long,
+        ).squeeze(0)
         if "token_type_ids" in encoded.keys():
             del encoded["token_type_ids"]
+        str_labels = f"{self.labels[idx]:0{self.num_digits}d}"
+        labels_per_digit = [int(str_label) for str_label in str_labels]
+        labels_per_digit.reverse()
+        labels_per_digit = torch.tensor(
+            labels_per_digit,
+            dtype=torch.long,
+        )
         return {
             "encoded": encoded,
+            "labels_per_digit": labels_per_digit,
             "index": idx,
         }
 
@@ -87,7 +110,7 @@ class KaggleMathOlympiadDataset(Dataset):
             if self.is_preprocessed:
                 parquet_path = f"{self.data_path}/preprocessed_dataset/{self.pretrained_model_name}/train.parquet"
             else:
-                parquet_path = f"{self.data_path}/camel-ai/math/train.parquet"
+                parquet_path = f"{self.data_path}/math-ai/TemplateGSM/train.parquet"
             data = pd.read_parquet(parquet_path)
             data = data.fillna("_")
             train_data, val_data = train_test_split(
@@ -174,9 +197,8 @@ class KaggleMathOlympiadDataset(Dataset):
         data: str,
         label: str,
     ) -> str:
-        if self.split == "predict":
-            default_system_prompt = f"""
-You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide the solution. The answer to each problem is an integer between 0 and 999. Do not provide explanations, only the final integer answer. Follow these rules:
+        default_system_prompt = f"""
+You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide the answer. The answer to each problem is an integer between 0 and 999. Do not provide explanations, only the final integer answer. Follow these rules:
 
 1. **Problem Understanding**: Understand the problem accurately.
 2. **Provide the Answer**: Directly provide the final integer answer.
@@ -203,16 +225,6 @@ problem:
 answer:
 {self.original_train_df[self.target_column_name][5]}
 """
-        else:
-            default_system_prompt = """
-You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide a detailed step-by-step explanation and solution. Follow these rules:
-
-1. **Problem Understanding**: Understand the problem accurately, and if necessary, restate the problem for clarity.
-2. **Step-by-Step Explanation**: Explain each step logically, using equations if needed.
-3. **Result Verification**: Verify that the final result is correct and explain the significance of the result.
-4. **Clear Description**: Ensure your explanation is clear and concise, with each step being understandable.
-5. **Provide Additional Information**: Provide additional concepts or information related to the problem if needed.
-"""
         if self.split == "predict":
             prompt = f"""### Instruction:
 {default_system_prompt} 
@@ -220,7 +232,7 @@ You are an advanced math problem-solving expert. Your task is to accurately unde
 ### Input(problem):
 {data.strip()}
 
-### Response(solution):
+### Response(answer):
 """.strip()
         else:
             prompt = f"""### Instruction:
@@ -229,6 +241,6 @@ You are an advanced math problem-solving expert. Your task is to accurately unde
 ### Input(problem):
 {data.strip()}
 
-### Response(solution):
+### Response(answer):
 {label} """.strip()
         return prompt
