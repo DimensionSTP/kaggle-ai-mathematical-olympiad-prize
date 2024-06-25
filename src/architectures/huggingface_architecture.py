@@ -1,13 +1,9 @@
 from typing import Dict, Any
-import os
-
-import numpy as np
-import pandas as pd
+import math
 
 import torch
 from torch import optim, nn
-
-from einops import repeat
+from torch.nn import functional as F
 
 from lightning.pytorch import LightningModule
 
@@ -28,11 +24,8 @@ class HuggingFaceArchitecture(LightningModule):
         period: int,
         eta_min: float,
         interval: str,
-        options: Dict[str, Any],
-        target_max_length: int,
-        target_min_length: int,
-        per_device_save_path: str,
-        target_column_name: str,
+        num_labels: int,
+        system: int,
     ) -> None:
         super().__init__()
         self.model = model
@@ -54,11 +47,14 @@ class HuggingFaceArchitecture(LightningModule):
         self.period = period
         self.eta_min = eta_min
         self.interval = interval
-        self.options = options
-        self.target_max_length = target_max_length
-        self.target_min_length = target_min_length
-        self.per_device_save_path = per_device_save_path
-        self.target_column_name = target_column_name
+        self.num_labels = num_labels
+        self.system = system
+        self.num_digits = round(
+            math.log(
+                self.num_labels,
+                self.system,
+            )
+        )
 
     def forward(
         self,
@@ -80,23 +76,40 @@ class HuggingFaceArchitecture(LightningModule):
         mode: str,
     ) -> Dict[str, torch.Tensor]:
         encoded = batch["encoded"]
-        encoded["labels"] = encoded["input_ids"]
         label = encoded["labels"]
+        labels_per_digit = batch["labels_per_digit"]
         index = batch["index"]
-        output = self(
+        total_output = self(
             encoded=encoded,
             mode=mode,
         )
-        logit = output.logits
-        pred = torch.argmax(
-            logit,
-            dim=-1,
-        )
-        loss = output.loss
+        original_output = total_output["original_output"]
+        original_loss = original_output.loss
+        logits_of_digits = total_output["logits_of_digits"]
+        preds_of_digits = [
+            torch.argmax(
+                logit_of_digit,
+                dim=-1,
+            )
+            for logit_of_digit in logits_of_digits
+        ]
+        losses_of_digits = [
+            F.cross_entropy(
+                logits_of_digits[i],
+                labels_per_digit[:, i],
+            )
+            for i in range(self.num_digits)
+        ]
+        loss = torch.stack(
+            [
+                original_loss,
+                torch.stack(losses_of_digits).mean(),
+            ]
+        ).mean()
         return {
             "loss": loss,
-            "logit": logit,
-            "pred": pred,
+            "logits": logits_of_digits,
+            "preds": preds_of_digits,
             "label": label,
             "index": index,
         }
@@ -144,7 +157,7 @@ class HuggingFaceArchitecture(LightningModule):
             mode="train",
         )
         loss = output["loss"]
-        pred = output["pred"]
+        preds = output["preds"]
         label = output["label"]
         self.log(
             "train_loss",
@@ -156,7 +169,7 @@ class HuggingFaceArchitecture(LightningModule):
         )
         return {
             "loss": loss,
-            "pred": pred,
+            "preds": preds,
             "label": label,
         }
 
@@ -170,7 +183,7 @@ class HuggingFaceArchitecture(LightningModule):
             mode="eval",
         )
         loss = output["loss"]
-        pred = output["pred"]
+        preds = output["preds"]
         label = output["label"]
         self.log(
             "val_loss",
@@ -182,7 +195,7 @@ class HuggingFaceArchitecture(LightningModule):
         )
         return {
             "loss": loss,
-            "pred": pred,
+            "preds": preds,
             "label": label,
         }
 
@@ -196,7 +209,7 @@ class HuggingFaceArchitecture(LightningModule):
             mode="eval",
         )
         loss = output["loss"]
-        pred = output["pred"]
+        preds = output["preds"]
         label = output["label"]
         self.log(
             "test_loss",
@@ -208,7 +221,7 @@ class HuggingFaceArchitecture(LightningModule):
         )
         return {
             "loss": loss,
-            "pred": pred,
+            "preds": preds,
             "label": label,
         }
 
@@ -217,110 +230,25 @@ class HuggingFaceArchitecture(LightningModule):
         batch: Dict[str, Any],
         batch_idx: int,
     ) -> torch.Tensor:
-        encoded = batch["encoded"]
-        index = batch["index"]
-        device_num = self.device.index if self.device.index is not None else 0
-
-        output = self.model.generate(
-            encoded=encoded,
-            options=self.options,
-            target_max_length=self.target_max_length,
-            target_min_length=self.target_min_length,
+        output = self.step(
+            batch=batch,
+            mode="eval",
         )
-        scores = output.scores
-        logit = torch.stack(scores, dim=1)
-        generation = output.sequences
-        input_length = len(encoded["input_ids"][0])
-        generation = generation[:, input_length:]
-
-        if len(logit.shape) < 3:
-            logit = logit.unsqueeze(0)
-        index_expanded = repeat(
-            index,
-            "batch_size -> batch_size generation_max_length 1",
-            generation_max_length=self.target_max_length,
-        )
-        if logit.size(dim=1) < self.target_max_length:
-            remaining_length = self.target_max_length - logit.size(dim=1)
-            pad_logit = torch.zeros(
-                (
-                    logit.size(
-                        dim=0,
-                    ),
-                    remaining_length,
-                    logit.size(
-                        dim=2,
-                    ),
-                ),
-                device=logit.device,
-            )
-            pad_logit[:, :, self.data_encoder.pad_token_id] = 1
-            logit = torch.cat(
+        logits = output["logits"]
+        index = output["index"]
+        index = index.unsqueeze(-1).float()
+        gathered_outputs = []
+        for logit in logits:
+            output = torch.cat(
                 (
                     logit,
-                    pad_logit,
-                ),
-                dim=1,
-            )
-        logit_with_index = (
-            torch.cat(
-                (
-                    logit,
-                    index_expanded,
+                    index,
                 ),
                 dim=-1,
             )
-            .cpu()
-            .numpy()
-        )
-        if not os.path.exists(f"{self.per_device_save_path}/logits"):
-            os.makedirs(
-                f"{self.per_device_save_path}/logits",
-                exist_ok=True,
-            )
-        logit_file = f"{self.per_device_save_path}/logits/device_num={device_num}-batch_idx={batch_idx}.npy"
-        if not os.path.exists(logit_file):
-            np.save(
-                logit_file,
-                logit_with_index,
-            )
-        else:
-            raise FileExistsError(f"{logit_file} already exists")
-
-        decoded_generation = self.data_encoder.batch_decode(
-            sequences=generation,
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=True,
-        )
-        index_list = index.tolist()
-        cleaned_generation = list(
-            map(
-                lambda sentence: sentence.replace("\n", " ").replace("\r", " "),
-                decoded_generation,
-            )
-        )
-        output = {index_list[i]: cleaned_generation[i] for i in range(len(index_list))}
-        if not os.path.exists(f"{self.per_device_save_path}/generations"):
-            os.makedirs(
-                f"{self.per_device_save_path}/generations",
-                exist_ok=True,
-            )
-        generation_file = f"{self.per_device_save_path}/generations/device_num={device_num}-batch_idx={batch_idx}.csv"
-        df = pd.DataFrame(
-            {
-                "index": output.keys(),
-                self.target_column_name: output.values(),
-            }
-        )
-        if not os.path.exists(generation_file):
-            df.to_csv(
-                generation_file,
-                mode="w",
-                header=True,
-                index=False,
-            )
-        else:
-            raise FileExistsError(f"{generation_file} already exists")
+            gathered_output = self.all_gather(output)
+            gathered_outputs.append(gathered_output)
+        return gathered_outputs
 
     def on_train_epoch_end(self) -> None:
         pass
