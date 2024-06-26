@@ -102,8 +102,9 @@ class HuggingFaceModel(nn.Module):
         self.digit_classifiers = nn.ModuleList(
             [
                 nn.Linear(
-                    self.num_labels,
+                    self.model.config.hidden_size,
                     self.system,
+                    bias=False,
                 )
                 for _ in range(self.num_digits)
             ]
@@ -114,19 +115,19 @@ class HuggingFaceModel(nn.Module):
         encoded: Dict[str, torch.Tensor],
     ) -> Dict[str, torch.Tensor]:
         output = self.model(**encoded)
+        pooler_output = output.hidden_states[0][:, 0, :]
         logits_of_digits = [
-            digit_classifier(output.logits)
+            digit_classifier(pooler_output)
             for digit_classifier in self.digit_classifiers
         ]
         return {
-            "original_output": output,
             "logits_of_digits": logits_of_digits,
         }
 
     def get_model(self) -> PreTrainedModel:
         model = AutoModelForSequenceClassification.from_pretrained(
             self.model_path,
-            output_hidden_states=False,
+            output_hidden_states=True,
             torch_dtype=self.precision,
             attn_implementation=self.attn_implementation,
             quantization_config=self.quantization_config,
