@@ -79,13 +79,11 @@ class HuggingFaceArchitecture(LightningModule):
         label = encoded["labels"]
         labels_per_digit = batch["labels_per_digit"]
         index = batch["index"]
-        total_output = self(
+        output = self(
             encoded=encoded,
             mode=mode,
         )
-        original_output = total_output["original_output"]
-        original_loss = original_output.loss
-        logits_of_digits = total_output["logits_of_digits"]
+        logits_of_digits = output["logits_of_digits"]
         preds_of_digits = [
             torch.argmax(
                 logit_of_digit,
@@ -100,12 +98,7 @@ class HuggingFaceArchitecture(LightningModule):
             )
             for i in range(self.num_digits)
         ]
-        loss = torch.stack(
-            [
-                original_loss,
-                torch.stack(losses_of_digits).mean(),
-            ]
-        ).mean()
+        loss = torch.stack(losses_of_digits).mean()
         return {
             "loss": loss,
             "logits": logits_of_digits,
