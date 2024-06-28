@@ -58,10 +58,6 @@ peft_config:
 lr: 0.0002
 period: 2
 eta_min: 0.00002
-options:
-  return_dict_in_generate: True
-  output_scores: True
-  no_repeat_ngram_size: 2
 
 monitor: val_loss
 tracking_direction: min
