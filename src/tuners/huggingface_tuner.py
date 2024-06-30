@@ -126,13 +126,13 @@ class HuggingFaceTuner:
             pretrained_model_name=params["pretrained_model_name"],
             is_preprocessed=self.module_params.is_preprocessed,
             custom_data_encoder_path=self.module_params.custom_data_encoder_path,
+            num_labels=self.module_params.num_labels,
+            system=self.module_params.system,
             strategy=self.module_params.strategy,
             lr=params["lr"],
             period=params["period"],
             eta_min=params["eta_min"],
             interval=self.module_params.interval,
-            num_labels=self.module_params.num_labels,
-            system=self.module_params.system,
         )
 
         self.logger.log_hyperparams(params)

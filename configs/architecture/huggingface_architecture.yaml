@@ -30,10 +30,10 @@ model:
 pretrained_model_name: ${pretrained_model_name}
 is_preprocessed: ${is_preprocessed}
 custom_data_encoder_path: ${custom_data_encoder_path}
+num_labels: ${num_labels}
+system: ${system}
 strategy: ${strategy}
 lr: ${lr}
 period: ${period}
 eta_min: ${eta_min}
 interval: step
-num_labels: ${num_labels}
-system: ${system}

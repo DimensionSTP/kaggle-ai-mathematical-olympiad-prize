@@ -19,13 +19,13 @@ class HuggingFaceArchitecture(LightningModule):
         pretrained_model_name: str,
         is_preprocessed: bool,
         custom_data_encoder_path: str,
+        num_labels: int,
+        system: int,
         strategy: str,
         lr: float,
         period: int,
         eta_min: float,
         interval: str,
-        num_labels: int,
-        system: int,
     ) -> None:
         super().__init__()
         self.model = model
@@ -42,19 +42,17 @@ class HuggingFaceArchitecture(LightningModule):
         )
         if self.data_encoder.pad_token_id is None:
             self.data_encoder.pad_token_id = self.data_encoder.eos_token_id
+        self.num_digits = round(
+            math.log(
+                num_labels,
+                system,
+            )
+        )
         self.strategy = strategy
         self.lr = lr
         self.period = period
         self.eta_min = eta_min
         self.interval = interval
-        self.num_labels = num_labels
-        self.system = system
-        self.num_digits = round(
-            math.log(
-                self.num_labels,
-                self.system,
-            )
-        )
 
     def forward(
         self,
