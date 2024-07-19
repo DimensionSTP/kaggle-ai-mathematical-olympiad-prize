@@ -99,15 +99,10 @@ class HuggingFaceModel(nn.Module):
         )
 
         self.model = self.get_model()
-        self.digit_classifiers = nn.ModuleList(
-            [
-                nn.Linear(
-                    self.model.config.hidden_size,
-                    self.system,
-                    bias=False,
-                )
-                for _ in range(self.num_digits)
-            ]
+        self.score = nn.Linear(
+            self.model.config.hidden_size,
+            self.system,
+            bias=False,
         )
 
     def forward(
@@ -115,10 +110,29 @@ class HuggingFaceModel(nn.Module):
         encoded: Dict[str, torch.Tensor],
     ) -> Dict[str, torch.Tensor]:
         output = self.model(**encoded)
-        pooler_output = output.hidden_states[0][:, 0, :]
+        logits = self.score(output.hidden_states[0])
+        input_ids = encoded["input_ids"]
+        batch_size = input_ids.shape[0]
+        sequence_lengths = (
+            torch.eq(
+                input_ids,
+                self.model.config.pad_token_id,
+            )
+            .int()
+            .argmax(-1)
+            - 1
+        )
+        sequence_lengths = sequence_lengths % input_ids.shape[-1]
+        sequence_lengths = sequence_lengths.to(logits.device)
         logits_of_digits = [
-            digit_classifier(pooler_output)
-            for digit_classifier in self.digit_classifiers
+            logits[
+                torch.arange(
+                    batch_size,
+                    device=logits.device,
+                ),
+                sequence_lengths - i,
+            ]
+            for i in range(self.num_digits)
         ]
         return {
             "logits_of_digits": logits_of_digits,
