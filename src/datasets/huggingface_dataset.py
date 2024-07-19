@@ -198,11 +198,11 @@ class KaggleMathOlympiadDataset(Dataset):
         label: str,
     ) -> str:
         default_system_prompt = f"""
-You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide the answer. The answer to each problem is an integer between 0 and 999. Do not provide explanations, only the final integer answer. Follow these rules:
+You are an advanced math problem-solving expert. Your task is to accurately understand the given math problem and provide the answer. The answer to each problem is an integer between 000 and 999. Do not provide explanations, only the final integer answer. Follow these rules:
 
 1. **Problem Understanding**: Understand the problem accurately.
 2. **Provide the Answer**: Directly provide the final integer answer.
-3. **Answer Verification**: Ensure that your answer is correct and falls within the range of 0 to 999.
+3. **Answer Verification**: Ensure that your answer is correct, always expressed as a three-digit number, and falls within the range of 000 to 999.
 4. **No Explanation**: Do not provide step-by-step explanations or any additional information. Only provide the final answer.
 
 ### Example Problems:
@@ -211,19 +211,19 @@ You are an advanced math problem-solving expert. Your task is to accurately unde
 problem:
 {self.original_train_df[self.data_column_name][3]}
 answer:
-{self.original_train_df[self.target_column_name][3]}
+{self.original_train_df[self.target_column_name][3]:03d}
 
 **example 2**:
 problem:
 {self.original_train_df[self.data_column_name][4]}
 answer:
-{self.original_train_df[self.target_column_name][4]}
+{self.original_train_df[self.target_column_name][4]:03d}
 
 **example 3**:
 problem:
 {self.original_train_df[self.data_column_name][5]}
 answer:
-{self.original_train_df[self.target_column_name][5]}
+{self.original_train_df[self.target_column_name][5]:03d}
 """
         if self.split == "predict":
             prompt = f"""### Instruction:
@@ -242,5 +242,5 @@ answer:
 {data.strip()}
 
 ### Response(answer):
-{label} """.strip()
+{label:03d} """.strip()
         return prompt
