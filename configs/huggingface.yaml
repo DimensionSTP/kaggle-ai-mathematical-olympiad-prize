@@ -27,6 +27,7 @@ batch_size: 64
 
 split_ratio: 0.1
 is_preprocessed: True
+external_data_path: math-ai/TemplateGSM
 data_column_name: problem
 prompt_column_name: cut_prompt
 target_column_name: answer
