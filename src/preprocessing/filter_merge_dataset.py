@@ -20,7 +20,7 @@ def filter_merge_dataset(
     config: DictConfig,
 ) -> None:
     df = pd.read_parquet(
-        f"{config.connected_dir}/data/math-ai/TemplateGSM/sample_and_concat.parquet"
+        f"{config.connected_dir}/data/{config.external_data_path}/sample_and_concat.parquet"
     )
     original_train_df = pd.read_csv(f"{config.connected_dir}/data/train.csv")
     tokenizer = AutoTokenizer.from_pretrained(
@@ -114,7 +114,7 @@ answer:
         ignore_index=True,
     )
     df_concat.to_parquet(
-        f"{config.connected_dir}/data/math-ai/TemplateGSM/train.parquet",
+        f"{config.connected_dir}/data/{config.external_data_path}/train.parquet",
         index=False,
     )
 

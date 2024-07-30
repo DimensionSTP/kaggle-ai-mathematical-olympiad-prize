@@ -23,7 +23,7 @@ def preprocess_dataset(
 ) -> None:
     if config.mode == "train":
         df = pd.read_parquet(
-            f"{config.connected_dir}/data/camel-ai/math/{config.mode}.parquet"
+            f"{config.connected_dir}/data/{config.external_data_path}/{config.mode}.parquet"
         )
     elif config.mode == "test":
         df = pd.read_csv(f"{config.connected_dir}/data/{config.mode}.csv")

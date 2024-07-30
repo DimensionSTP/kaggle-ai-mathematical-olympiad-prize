@@ -21,7 +21,7 @@ from omegaconf import DictConfig
 def preprocess_external_dataset(
     config: DictConfig,
 ) -> None:
-    path = f"{config.connected_dir}/data/math-ai/TemplateGSM"
+    path = f"{config.connected_dir}/data/{config.external_data_path}"
     file_paths = glob.glob(f"{path}/*.parquet")
     processed_dfs = []
     min_value = 0

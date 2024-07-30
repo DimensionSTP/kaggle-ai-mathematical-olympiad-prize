@@ -20,7 +20,7 @@ def make_corpus(
     config: DictConfig,
 ) -> None:
     train_df = pd.read_parquet(
-        f"{config.connected_dir}/data/camel-ai/math/train.parquet"
+        f"{config.connected_dir}/data/{config.external_data_path}/train.parquet"
     )
     original_train_df = pd.read_csv(f"{config.connected_dir}/data/train.csv")
     test_df = pd.read_csv(f"{config.connected_dir}/data/test.csv")
