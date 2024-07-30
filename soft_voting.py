@@ -71,8 +71,8 @@ def softly_vote_logits(
 
     ensemble_predictions_weighted_sum = np.zeros_like(ensemble_predictions_per_digit[0])
     for i, ensemble_predictions in enumerate(ensemble_predictions_per_digit):
-        weight = 10**i
-        ensemble_predictions_weighted_sum += weight * ensemble_predictions
+        digit_weight = 10**i
+        ensemble_predictions_weighted_sum += digit_weight * ensemble_predictions
 
     submission_df = pd.read_csv(submission_file)
     submission_df[target_column_name] = ensemble_predictions_weighted_sum
