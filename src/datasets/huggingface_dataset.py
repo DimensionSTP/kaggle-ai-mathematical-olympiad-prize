@@ -18,6 +18,7 @@ class KaggleMathOlympiadDataset(Dataset):
         split_ratio: float,
         seed: int,
         is_preprocessed: bool,
+        external_data_path: str,
         data_column_name: str,
         prompt_column_name: str,
         target_column_name: str,
@@ -35,6 +36,7 @@ class KaggleMathOlympiadDataset(Dataset):
         self.split_ratio = split_ratio
         self.seed = seed
         self.is_preprocessed = is_preprocessed
+        self.external_data_path = external_data_path
         self.data_column_name = data_column_name
         self.prompt_column_name = prompt_column_name
         self.target_column_name = target_column_name
@@ -110,7 +112,9 @@ class KaggleMathOlympiadDataset(Dataset):
             if self.is_preprocessed:
                 parquet_path = f"{self.data_path}/preprocessed_dataset/{self.pretrained_model_name}/train.parquet"
             else:
-                parquet_path = f"{self.data_path}/math-ai/TemplateGSM/train.parquet"
+                parquet_path = (
+                    f"{self.data_path}/{self.external_data_path}/train.parquet"
+                )
             data = pd.read_parquet(parquet_path)
             data = data.fillna("_")
             train_data, val_data = train_test_split(
