@@ -4,6 +4,7 @@ split: ${split.train}
 split_ratio: ${split_ratio}
 seed: ${seed}
 is_preprocessed: ${is_preprocessed}
+external_data_path: ${external_data_path}
 data_column_name: ${data_column_name}
 prompt_column_name: ${prompt_column_name}
 target_column_name: ${target_column_name}
