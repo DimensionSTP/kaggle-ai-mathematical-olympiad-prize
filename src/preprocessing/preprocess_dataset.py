@@ -31,7 +31,7 @@ def preprocess_dataset(
         raise ValueError(f"Invalid mode: {config.mode}")
     original_train_df = pd.read_csv(f"{config.connected_dir}/data/train.csv")
     tokenizer = AutoTokenizer.from_pretrained(
-        f"{config.custom_data_encoder_path}/{config.pretrained_model_name}",
+        config.custom_data_encoder_path,
         use_fast=True,
     )
 
