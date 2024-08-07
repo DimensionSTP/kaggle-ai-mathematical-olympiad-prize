@@ -4,8 +4,8 @@ path="src/postprocessing"
 is_preprocessed=False
 is_tuned="untuned"
 strategy="deepspeed_stage_3_offload"
-upload_user="meta-math"
-model_type="MetaMath-7B-V1.0"
+upload_user="deepseek-ai"
+model_type="deepseek-math-7b-instruct"
 left_padding=False
 quantization_type="origin"
 peft_type="origin"
@@ -14,6 +14,7 @@ target_max_length=4
 precision="bf16"
 batch_size=64
 epoch=10
+model_detail="deepseek-math-7b-instruct"
 
 python $path/upload_to_hf_hub.py \
     is_preprocessed=$is_preprocessed \
@@ -28,4 +29,5 @@ python $path/upload_to_hf_hub.py \
     target_max_length=$target_max_length \
     precision=$precision \
     batch_size=$batch_size \
-    epoch=$epoch
+    epoch=$epoch \
+    model_detail=$model_detail

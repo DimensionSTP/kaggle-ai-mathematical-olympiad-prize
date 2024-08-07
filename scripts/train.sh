@@ -3,8 +3,8 @@
 is_preprocessed=False
 is_tuned="untuned"
 strategy="deepspeed_stage_3_offload"
-upload_user="meta-math"
-model_type="MetaMath-7B-V1.0"
+upload_user="deepseek-ai"
+model_type="deepseek-math-7b-instruct"
 left_padding=False
 quantization_type="origin"
 peft_type="origin"
