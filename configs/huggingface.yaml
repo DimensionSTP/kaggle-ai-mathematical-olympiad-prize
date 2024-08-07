@@ -31,8 +31,8 @@ external_data_path: math-ai/TemplateGSM
 data_column_name: problem
 prompt_column_name: cut_prompt
 target_column_name: answer
-upload_user: meta-math
-model_type: MetaMath-7B-V1.0
+upload_user: deepseek-ai
+model_type: deepseek-math-7b-instruct
 pretrained_model_name: ${upload_user}/${model_type}
 custom_data_encoder_path: ${connected_dir}/data/merged_tokenizer/${pretrained_model_name}
 left_padding: False
@@ -100,7 +100,8 @@ pred_name: ${save_detail}-epoch=${epoch}
 submission_name: ${save_detail}-epoch=${epoch}
 
 user_name: ${oc.env:USER_NAME}
-upload_tag: mathQA
+model_detail: deepseek-math-7b-instruct
+upload_tag: math-qa
 num_safetensors: 10
 
 run_name: ${project_name}
