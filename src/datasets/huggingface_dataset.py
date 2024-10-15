@@ -237,17 +237,17 @@ answer:
 {default_system_prompt} 
 
 ### Input(problem):
-{data.strip()}
+{data}
 
 ### Response(answer):
-""".strip()
+"""
         else:
             prompt = f"""### Instruction:
 {default_system_prompt} 
 
 ### Input(problem):
-{data.strip()}
+{data}
 
 ### Response(answer):
-{label:03d} """.strip()
+{label:03d} """
         return prompt

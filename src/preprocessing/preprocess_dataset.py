@@ -70,10 +70,10 @@ answer:
 {default_system_prompt} 
 
 ### Input(problem):
-{data.strip()}
+{data}
 
 ### Response(answer):
-""".strip()
+"""
         return prompt
 
     df["prompt"] = df[config.data_column_name].apply(generate_prompt)
