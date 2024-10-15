@@ -13,7 +13,7 @@ git clone https://github.com/DimensionSTP/kaggle-ai-mathematical-olympiad-prize.
 cd kaggle-ai-mathematical-olympiad-prize
 
 # [OPTIONAL] create conda environment
-conda create -n myenv python=3.8
+conda create -n myenv python=3.10 -y
 conda activate myenv
 
 # install requirements
